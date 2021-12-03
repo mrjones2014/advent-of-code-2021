@@ -2,42 +2,86 @@ use std::error::Error;
 
 use utils::input_parser;
 
-const NUM_BITS: usize = 12;
+#[derive(Clone)]
+struct DiagnosticReport {
+    len: usize,
+    values: Vec<u64>,
+}
+
+impl TryFrom<Vec<String>> for DiagnosticReport {
+    type Error = Box<dyn Error>;
+
+    fn try_from(input: Vec<String>) -> Result<Self, Self::Error> {
+        let values = input
+            .iter()
+            .map(|line| u64::from_str_radix(line.trim(), 2))
+            .collect::<Result<Vec<_>, _>>()?;
+        Ok(Self {
+            len: input
+                .iter()
+                .map(|line| line.trim().len())
+                .max()
+                .expect("Expected puzzle input"),
+            values,
+        })
+    }
+}
+
+impl DiagnosticReport {
+    fn compute_gamma_epsilon(&self) -> (u64, u64) {
+        let mut gamma = 0;
+        let mut epsilon = 0;
+        let mut mask = 1;
+
+        for _ in 0..self.len {
+            let count = self.values.iter().filter(|n| *n & mask != 0).count();
+            if count * 2 >= self.values.len() {
+                gamma |= mask;
+            } else {
+                epsilon |= mask;
+            }
+
+            mask <<= 1;
+        }
+
+        (gamma, epsilon)
+    }
+
+    fn life_support_rating(&self, use_gamma: bool) -> u64 {
+        let mut report = self.clone();
+        let mut mask = 1 << report.len - 1;
+
+        while report.values.len() > 1 {
+            let (gamma, epsilon) = report.compute_gamma_epsilon();
+            let rating = if use_gamma { gamma } else { epsilon };
+
+            report.values = report
+                .values
+                .into_iter()
+                .filter(|n| rating & mask == n & mask)
+                .collect();
+
+            mask >>= 1;
+        }
+
+        report.values[0]
+    }
+
+    pub fn oxygen(&self) -> u64 {
+        self.life_support_rating(true)
+    }
+
+    pub fn c02(&self) -> u64 {
+        self.life_support_rating(false)
+    }
+}
 
 fn main() -> Result<(), Box<dyn Error>> {
     let input = input_parser::parse("puzzle3");
-    let mut num_binary_per_col = [(0, 0); NUM_BITS]; // for each column, (num 0s, num 1s)
-    for line in input.iter() {
-        for (column, bit) in line.chars().enumerate() {
-            match bit {
-                '0' => {
-                    num_binary_per_col[column] = (
-                        num_binary_per_col[column].0 + 1,
-                        num_binary_per_col[column].1,
-                    )
-                }
-                '1' => {
-                    num_binary_per_col[column] = (
-                        num_binary_per_col[column].0,
-                        num_binary_per_col[column].1 + 1,
-                    )
-                }
-                _ => panic!("{} is not valid binary", bit),
-            }
-        }
-    }
-    let gamma_rate_binary_str = num_binary_per_col
-        .into_iter()
-        .map(|(num_zeroes, num_ones)| if num_zeroes > num_ones { "0" } else { "1" })
-        .collect::<Vec<&str>>()
-        .join("");
-    let gamma_rate = i64::from_str_radix(&gamma_rate_binary_str, 2)?;
-    let epsilon_rate_binary_str = num_binary_per_col
-        .into_iter()
-        .map(|(num_zeroes, num_ones)| if num_zeroes > num_ones { "1" } else { "0" })
-        .collect::<Vec<&str>>()
-        .join("");
-    let epsilon_rate = i64::from_str_radix(&epsilon_rate_binary_str, 2)?;
-    println!("Power consumption: {}", gamma_rate * epsilon_rate);
+    let report = DiagnosticReport::try_from(input)?;
+
+    let (gamma, epsilon) = report.compute_gamma_epsilon();
+    println!("Power consumption: {}", gamma * epsilon);
+    println!("Life support rating: {}", report.oxygen() * report.c02());
     Ok(())
 }
