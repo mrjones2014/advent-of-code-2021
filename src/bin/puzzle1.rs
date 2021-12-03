@@ -5,7 +5,8 @@ fn main() {
         .into_iter()
         .map(|line| line.parse().unwrap())
         .collect();
-    let num_increases = input
+    let sums: Vec<i32> = input.windows(3).map(|window| window.iter().sum()).collect();
+    let num_increases = sums
         .windows(2)
         .filter(|window| window[1] > window[0])
         .count();
