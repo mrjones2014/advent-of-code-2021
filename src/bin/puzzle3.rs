@@ -49,7 +49,7 @@ impl DiagnosticReport {
 
     fn life_support_rating(&self, use_gamma: bool) -> u64 {
         let mut report = self.clone();
-        let mut mask = 1 << report.len - 1;
+        let mut mask = 1 << (report.len - 1);
 
         while report.values.len() > 1 {
             let (gamma, epsilon) = report.compute_gamma_epsilon();
