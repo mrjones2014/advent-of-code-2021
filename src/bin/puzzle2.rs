@@ -1,102 +1,68 @@
-use std::{error::Error, fmt::Display};
+use std::{error::Error, str::FromStr};
 
 use utils::input_parser;
 
 enum Direction {
-    FORWARD,
-    DOWN,
-    UP,
+    Forward(i32),
+    Down(i32),
+    Up(i32),
 }
 
-impl From<&String> for Direction {
-    fn from(input: &String) -> Self {
-        if input.contains("forward") {
-            return Direction::FORWARD;
-        }
+impl FromStr for Direction {
+    type Err = Box<dyn Error>;
 
-        if input.contains("down") {
-            return Direction::DOWN;
-        }
-
-        if input.contains("up") {
-            return Direction::UP;
-        }
-
-        panic!("Unsupported direction: {}", input);
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (direction, value_str) = s.trim().split_once(' ').expect("Missing value in input");
+        let value: i32 = value_str.parse()?;
+        Ok(match direction {
+            "up" => Self::Up(value),
+            "down" => Self::Down(value),
+            "forward" => Self::Forward(value),
+            _ => panic!("Invalid input"),
+        })
     }
 }
 
-impl Display for Direction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Direction::FORWARD => write!(f, "forward"),
-            Direction::DOWN => write!(f, "down"),
-            Direction::UP => write!(f, "up"),
-        }
-    }
-}
-
-fn part_1(input: &Vec<String>) -> Result<(), Box<dyn Error>> {
-    let mut coordinates = (0, 0); // horizontal pos, depth
-    for movement in input.iter() {
-        let direction = Direction::from(movement);
-        let value: i32 = movement
-            .replace(format!("{}", direction).as_str(), "")
-            .trim()
-            .parse()?;
+fn part_1(input: &[String]) -> Result<i32, Box<dyn Error>> {
+    let directions: Vec<Direction> = input
+        .iter()
+        .map(|line| Direction::from_str(line).expect("Invalid input"))
+        .collect();
+    let (mut x, mut z) = (0, 0);
+    for direction in directions {
         match direction {
-            Direction::FORWARD => coordinates = (coordinates.0 + value, coordinates.1),
-            Direction::DOWN => coordinates = (coordinates.0, coordinates.1 + value),
-            Direction::UP => coordinates = (coordinates.0, coordinates.1 - value),
+            Direction::Up(value) => z -= value,
+            Direction::Down(value) => z += value,
+            Direction::Forward(value) => x += value,
         }
     }
 
-    println!("Part 1\n=======");
-    println!(
-        "Coordinates: horizontal: {}, depth: {}",
-        coordinates.0, coordinates.1
-    );
-    println!("horizontal * depth = {}", coordinates.0 * coordinates.1);
-
-    Ok(())
+    Ok(x * z)
 }
 
-fn part_2(input: &Vec<String>) -> Result<(), Box<dyn Error>> {
-    let mut coordinates = (0, 0, 0); // horizontal pos, depth, aim
-    for movement in input.iter() {
-        let direction = Direction::from(movement);
-        let value: i32 = movement
-            .replace(format!("{}", direction).as_str(), "")
-            .trim()
-            .parse()?;
+fn part_2(input: &[String]) -> Result<i32, Box<dyn Error>> {
+    let directions: Vec<Direction> = input
+        .iter()
+        .map(|line| Direction::from_str(line).expect("Invalid input"))
+        .collect();
+    let (mut x, mut z, mut aim) = (0, 0, 0);
+    for direction in directions {
         match direction {
-            Direction::FORWARD => {
-                coordinates = (
-                    coordinates.0 + value,
-                    coordinates.1 + (coordinates.2 * value),
-                    coordinates.2,
-                )
+            Direction::Up(n) => aim -= n,
+            Direction::Down(n) => aim += n,
+            Direction::Forward(n) => {
+                x += n;
+                z += aim * n;
             }
-            Direction::DOWN => coordinates = (coordinates.0, coordinates.1, coordinates.2 + value),
-            Direction::UP => coordinates = (coordinates.0, coordinates.1, coordinates.2 - value),
         }
     }
 
-    println!("Part 2\n=======");
-    println!(
-        "Coordinates: horizontal: {}, depth: {}, aim: {}",
-        coordinates.0, coordinates.1, coordinates.2
-    );
-    println!("horizontal * depth = {}", coordinates.0 * coordinates.1);
-
-    Ok(())
+    Ok(x * z)
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
     let input = input_parser::parse("puzzle2");
-    part_1(&input)?;
-    println!("");
-    part_2(&input)?;
-
+    println!("Part 1: {}", part_1(&input)?);
+    println!("Part 2: {}", part_2(&input)?);
     Ok(())
 }

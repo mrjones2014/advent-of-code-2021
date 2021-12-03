@@ -6,9 +6,8 @@ use std::{
 pub fn parse(puzzle_num: &str) -> Vec<String> {
     let file_path = format!("./inputs/{}", puzzle_num);
     let file = File::open(file_path).unwrap();
-    let lines = BufReader::new(file)
+    BufReader::new(file)
         .lines()
-        .map(|line| format!("{}", line.unwrap()))
-        .collect();
-    lines
+        .map(|line| line.unwrap())
+        .collect()
 }
