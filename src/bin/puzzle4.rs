@@ -57,11 +57,11 @@ impl Display for Board {
 impl From<&[String; BOARD_DIMENSIONS]> for Board {
     fn from(rows_input: &[String; BOARD_DIMENSIONS]) -> Self {
         let mut rows = Vec::new();
-        for row in rows_input.into_iter() {
+        for row in rows_input.iter() {
             let cells_in_row: [u32; BOARD_DIMENSIONS] = row
                 .trim()
-                .split(" ")
-                .filter(|cell| cell.to_string() != "" && cell.to_string() != " ")
+                .split(' ')
+                .filter(|cell| !(*cell).is_empty() && *cell != " ")
                 .map(|cell_str| cell_str.parse().expect("Unable to parse cell"))
                 .collect::<Vec<u32>>()
                 .try_into()
@@ -80,7 +80,7 @@ fn parse_boards(input_data: Vec<String>) -> Vec<Board> {
     let boards_strs = input_data
         .iter()
         .skip(2)
-        .filter(|row| row.to_string() != "\n" && !row.is_empty())
+        .filter(|row| *row != "\n" && !row.is_empty())
         .map(|row| row.to_string())
         .collect::<Vec<String>>();
     let boards_input: Vec<&[String; BOARD_DIMENSIONS]> = boards_strs
@@ -112,7 +112,7 @@ fn find_last_winning_board<'a>(boards: &'a [Board], inputs: &'a [u32]) -> (&'a B
     for board in boards.iter() {
         for i in 0..inputs.len() {
             let seen_inputs = &inputs[0..i];
-            if board.is_win(&seen_inputs) {
+            if board.is_win(seen_inputs) {
                 turns_to_win.insert(i, (board, seen_inputs));
                 break;
             }
@@ -129,14 +129,14 @@ fn find_last_winning_board<'a>(boards: &'a [Board], inputs: &'a [u32]) -> (&'a B
 fn main() -> Result<(), Box<dyn Error>> {
     let input_data = input_parser::parse("puzzle4");
     let bingo_inputs = &input_data[0]
-        .split(",")
+        .split(',')
         .map(|num_str| num_str.parse::<u32>().expect("Unable to parse input value"))
         .collect::<Vec<u32>>();
     let boards = parse_boards(input_data);
     let (first_winning_board, first_winning_used_inputs) =
-        find_first_winning_board(&boards, &bingo_inputs);
+        find_first_winning_board(&boards, bingo_inputs);
     let (last_winning_board, last_winning_used_inputs) =
-        find_last_winning_board(&boards, &bingo_inputs);
+        find_last_winning_board(&boards, bingo_inputs);
     println!(
         "Score of first winning board: {}",
         first_winning_board.compute_score(first_winning_used_inputs)
