@@ -1,4 +1,4 @@
-use std::{error::Error, fmt::Display};
+use std::{collections::HashMap, error::Error, fmt::Display};
 
 use utils::input_parser;
 
@@ -40,7 +40,7 @@ impl Board {
         let all_cells_iter = self.rows.iter().flatten();
         let mut sum = 0;
         for value in all_cells_iter {
-            if !seen_input.iter().any(|input| input == value) {
+            if seen_input.iter().all(|input| input != value) {
                 sum += value;
             }
         }
@@ -94,7 +94,7 @@ fn parse_boards(input_data: Vec<String>) -> Vec<Board> {
         .collect()
 }
 
-fn find_winning_board<'a>(boards: &'a [Board], inputs: &'a [u32]) -> (&'a Board, &'a [u32]) {
+fn find_first_winning_board<'a>(boards: &'a [Board], inputs: &'a [u32]) -> (&'a Board, &'a [u32]) {
     for i in 0..inputs.len() {
         for board in boards.iter() {
             let seen_inputs = &inputs[0..i];
@@ -107,6 +107,25 @@ fn find_winning_board<'a>(boards: &'a [Board], inputs: &'a [u32]) -> (&'a Board,
     panic!("No winning boards")
 }
 
+fn find_last_winning_board<'a>(boards: &'a [Board], inputs: &'a [u32]) -> (&'a Board, &'a [u32]) {
+    let mut turns_to_win: HashMap<usize, (&Board, &[u32])> = HashMap::new();
+    for board in boards.iter() {
+        for i in 0..inputs.len() {
+            let seen_inputs = &inputs[0..i];
+            if board.is_win(&seen_inputs) {
+                turns_to_win.insert(i, (board, seen_inputs));
+                break;
+            }
+        }
+    }
+
+    *turns_to_win
+        .iter()
+        .max_by_key(|entry| entry.0)
+        .expect("No winning boards")
+        .1
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let input_data = input_parser::parse("puzzle4");
     let bingo_inputs = &input_data[0]
@@ -114,10 +133,18 @@ fn main() -> Result<(), Box<dyn Error>> {
         .map(|num_str| num_str.parse::<u32>().expect("Unable to parse input value"))
         .collect::<Vec<u32>>();
     let boards = parse_boards(input_data);
-    let (winning_board, used_inputs) = find_winning_board(&boards, bingo_inputs);
+    let (first_winning_board, first_winning_used_inputs) =
+        find_first_winning_board(&boards, &bingo_inputs);
+    let (last_winning_board, last_winning_used_inputs) =
+        find_last_winning_board(&boards, &bingo_inputs);
     println!(
-        "Score of winning board: {}",
-        winning_board.compute_score(used_inputs)
+        "Score of first winning board: {}",
+        first_winning_board.compute_score(first_winning_used_inputs)
+    );
+
+    println!(
+        "Score of last winning board: {}",
+        last_winning_board.compute_score(last_winning_used_inputs)
     );
 
     Ok(())
