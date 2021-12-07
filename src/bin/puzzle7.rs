@@ -20,7 +20,7 @@ where
 
 fn main() -> Result<(), Box<dyn Error>> {
     let inputs = input_parser::parse("puzzle7")[0]
-        .split(",")
+        .split(',')
         .map(|s| s.parse().expect("Failed to parse input to u16"))
         .collect::<Vec<i32>>();
     let mean = inputs.iter().sum::<i32>() / inputs.len() as i32;

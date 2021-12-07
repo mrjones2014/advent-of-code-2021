@@ -58,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .into_iter()
         .map(|val| val.parse::<usize>().expect("Failed to parse timer input"))
         .collect::<Vec<usize>>();
-    initial_timers.sort();
+    initial_timers.sort_unstable();
 
     let sim = Simulation::new(initial_timers);
 
