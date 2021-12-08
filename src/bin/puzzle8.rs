@@ -1,6 +1,37 @@
-use std::{error::Error, str::FromStr};
+use std::{collections::HashMap, error::Error, str::FromStr};
 
 use utils::input_parser;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum SevenSegment {
+    Zero = 0,
+    One = 1,
+    Two = 2,
+    Three = 3,
+    Four = 4,
+    Five = 5,
+    Six = 6,
+    Seven = 7,
+    Eight = 8,
+    Nine = 9,
+}
+
+impl SevenSegment {
+    pub fn num_segments(&self) -> usize {
+        match self {
+            SevenSegment::Zero => 6,
+            SevenSegment::One => 2,
+            SevenSegment::Two => 5,
+            SevenSegment::Three => 5,
+            SevenSegment::Four => 4,
+            SevenSegment::Five => 5,
+            SevenSegment::Six => 6,
+            SevenSegment::Seven => 3,
+            SevenSegment::Eight => 7,
+            SevenSegment::Nine => 6,
+        }
+    }
+}
 
 struct Signal {
     input: Vec<String>,
@@ -21,19 +52,16 @@ impl FromStr for Signal {
 fn part_1(signals: &[Signal]) -> usize {
     signals
         .iter()
-        .map(|signal| {
-            signal
-                .output
-                .iter()
-                .filter(|output| {
-                    output.len() == 2 // digit 1
-                || output.len() == 4 // digit 4
-                || output.len() == 3 // digit 7
-                || output.len() == 7 // digit 8
-                })
-                .count()
+        .flat_map(|signal| signal.output.to_owned())
+        .filter(|output| {
+            let output_len = output.len();
+
+            output_len == SevenSegment::One.num_segments()
+                || output_len == SevenSegment::Four.num_segments()
+                || output_len == SevenSegment::Seven.num_segments()
+                || output_len == SevenSegment::Eight.num_segments()
         })
-        .sum()
+        .count()
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
