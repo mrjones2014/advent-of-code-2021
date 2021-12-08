@@ -38,13 +38,23 @@ struct Signal {
     output: Vec<String>,
 }
 
+fn sort_chars(s: &str) -> String {
+    let mut chars = s.chars().collect::<Vec<char>>();
+    chars.sort_unstable();
+    chars.into_iter().collect()
+}
+
 impl FromStr for Signal {
     type Err = Box<dyn Error>;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (raw_input, raw_output) = s.split_once('|').expect("No delimeter found.");
-        let input = raw_input.trim().split(' ').map(|s| s.to_owned()).collect();
-        let output = raw_output.trim().split(' ').map(|s| s.to_owned()).collect();
+        let input = raw_input.trim().split(' ').map(|s| sort_chars(s)).collect();
+        let output = raw_output
+            .trim()
+            .split(' ')
+            .map(|s| sort_chars(s))
+            .collect();
         Ok(Signal { input, output })
     }
 }
@@ -64,6 +74,121 @@ fn part_1(signals: &[Signal]) -> usize {
         .count()
 }
 
+fn part_2(signals: &[Signal]) -> u32 {
+    let mut result = 0;
+
+    for signal in signals {
+        let mut char_frequency: HashMap<usize, Vec<String>> = HashMap::new();
+        for word in &signal.input {
+            char_frequency
+                .entry(word.len())
+                .or_default()
+                .push(word.to_string());
+        }
+
+        let mut digit_mapping = HashMap::new();
+
+        // unique known characters
+        for digit in [
+            SevenSegment::One,
+            SevenSegment::Four,
+            SevenSegment::Seven,
+            SevenSegment::Eight,
+        ] {
+            digit_mapping.insert(digit, char_frequency[&digit.num_segments()][0].clone());
+        }
+
+        // 6 is be the only 6 segment digit that doesn't use all the segments 1 uses
+        let six = signal
+            .input
+            .iter()
+            .find(|s| {
+                s.len() == SevenSegment::Six.num_segments()
+                    && !digit_mapping[&SevenSegment::One]
+                        .chars()
+                        .all(|c| s.contains(c))
+            })
+            .unwrap();
+        digit_mapping.insert(SevenSegment::Six, six.clone());
+
+        // 3 is the only 5 segment digit that does use all the segments 1 uses
+        let three = signal
+            .input
+            .iter()
+            .find(|s| {
+                s.len() == SevenSegment::Three.num_segments()
+                    && digit_mapping[&SevenSegment::One]
+                        .chars()
+                        .all(|c| s.contains(c))
+            })
+            .unwrap();
+        digit_mapping.insert(SevenSegment::Three, three.clone());
+
+        // 9 is the only 6 segment digit that uses all the segments 3 uses
+        let nine = signal
+            .input
+            .iter()
+            .find(|s| {
+                s.len() == SevenSegment::Nine.num_segments()
+                    && digit_mapping[&SevenSegment::Three]
+                        .chars()
+                        .all(|c| s.contains(c))
+            })
+            .unwrap();
+        digit_mapping.insert(SevenSegment::Nine, nine.clone());
+
+        // 0 is the only remaining 6 segment digit
+        let zero = signal
+            .input
+            .iter()
+            .find(|s| {
+                s.len() == SevenSegment::Zero.num_segments()
+                    && s.as_str() != digit_mapping[&SevenSegment::Six]
+                    && s.as_str() != digit_mapping[&SevenSegment::Nine]
+            })
+            .unwrap();
+        digit_mapping.insert(SevenSegment::Zero, zero.clone());
+
+        // 2 is the only 5 segment digit that shares 2 segments with 4
+        let two = signal
+            .input
+            .iter()
+            .find(|s| {
+                s.len() == SevenSegment::Two.num_segments()
+                    && digit_mapping[&SevenSegment::Four]
+                        .chars()
+                        .filter(|&c| s.contains(c))
+                        .count()
+                        == 2
+            })
+            .unwrap();
+        digit_mapping.insert(SevenSegment::Two, two.clone());
+
+        // 5 is the only remaining 5 segment digit
+        let five = signal
+            .input
+            .iter()
+            .find(|s| {
+                s.len() == SevenSegment::Five.num_segments()
+                    && s.as_str() != digit_mapping[&SevenSegment::Two]
+                    && s.as_str() != digit_mapping[&SevenSegment::Three]
+            })
+            .unwrap();
+        digit_mapping.insert(SevenSegment::Five, five.clone());
+
+        let reverse_mapping: HashMap<_, _> =
+            digit_mapping.into_iter().map(|(k, v)| (v, k)).collect();
+        let n = signal
+            .output
+            .iter()
+            .fold(0, |acc, o| 10 * acc + reverse_mapping[o] as u32);
+
+        result += n;
+    }
+
+    result
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let inputs: Vec<Signal> = input_parser::parse("puzzle8")
         .iter()
@@ -71,6 +196,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .collect();
 
     println!("Part 1: {}", part_1(&inputs));
+    println!("Part 1: {}", part_2(&inputs));
 
     Ok(())
 }
