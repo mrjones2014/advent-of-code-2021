@@ -49,12 +49,8 @@ impl FromStr for Signal {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (raw_input, raw_output) = s.split_once('|').expect("No delimeter found.");
-        let input = raw_input.trim().split(' ').map(|s| sort_chars(s)).collect();
-        let output = raw_output
-            .trim()
-            .split(' ')
-            .map(|s| sort_chars(s))
-            .collect();
+        let input = raw_input.trim().split(' ').map(sort_chars).collect();
+        let output = raw_output.trim().split(' ').map(sort_chars).collect();
         Ok(Signal { input, output })
     }
 }
