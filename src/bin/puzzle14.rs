@@ -75,7 +75,7 @@ fn solve(input: &[String], num_iterations: usize) -> usize {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let input = input_parser::parse("puzzle14");
-    println!("Part 1: {}", solve(&input.clone(), 10));
-    println!("Part 1: {}", solve(&input.clone(), 40));
+    println!("Part 1: {}", solve(&input, 10));
+    println!("Part 1: {}", solve(&input, 40));
     Ok(())
 }
