@@ -54,7 +54,9 @@ fn adjacencies(position: (usize, usize), height: usize, width: usize) -> Vec<(us
     adjacencies
 }
 
-fn part_1(input: Vec<Vec<u32>>, height: usize, width: usize) -> u32 {
+fn part_1(input: &[Vec<u32>]) -> u32 {
+    let height = input.len();
+    let width = input[0].len();
     let mut path = BinaryHeap::new();
     path.push(Node {
         position: (0, 1),
@@ -99,6 +101,36 @@ fn part_1(input: Vec<Vec<u32>>, height: usize, width: usize) -> u32 {
     unreachable!()
 }
 
+fn build_part_2_map(input: &[Vec<u32>]) -> Vec<Vec<u32>> {
+    let tile_height = input.len();
+    let tile_width = input[0].len();
+
+    let mut new_map = vec![vec![0; 5 * tile_width]; 5 * tile_height];
+
+    for tile_row in 0..5 {
+        for tile_column in 0..5 {
+            for i in 0..tile_height {
+                for j in 0..tile_width {
+                    let mut new_risk_value = input[i][j] + tile_row + tile_column;
+                    // values > 9 wrap back to 1
+                    if new_risk_value > 9 {
+                        new_risk_value -= 9;
+                    }
+                    new_map[tile_row as usize * tile_height + i]
+                        [tile_column as usize * tile_width + j] = new_risk_value;
+                }
+            }
+        }
+    }
+
+    new_map
+}
+
+fn part_2(input: &[Vec<u32>]) -> u32 {
+    let new_map = build_part_2_map(input);
+    part_1(&new_map)
+}
+
 fn main() -> Result<(), Box<dyn Error>> {
     let input: Vec<Vec<u32>> = input_parser::parse("puzzle15")
         .iter()
@@ -108,8 +140,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .collect()
         })
         .collect();
-    let height = input.len();
-    let width = input[0].len();
-    println!("Part 1: {}", part_1(input, height, width));
+    println!("Part 1: {}", part_1(&input));
+    println!("Part 1: {}", part_2(&input));
     Ok(())
 }
