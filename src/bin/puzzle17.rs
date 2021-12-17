@@ -1,6 +1,7 @@
 use std::{
+    cmp::Ordering,
     error::Error,
-    ops::{Add, Div, Range, RangeInclusive},
+    ops::{Add, Div, RangeInclusive},
 };
 use utils::input_parser;
 
@@ -17,13 +18,12 @@ impl Target {
             x += dx;
             y += dy;
 
-            dx += if dx > 0 {
-                -1
-            } else if dx < 0 {
-                1
-            } else {
-                0
+            dx += match dx.cmp(&0) {
+                Ordering::Greater => -1,
+                Ordering::Less => 1,
+                _ => 0,
             };
+
             dy -= 1;
 
             peak = peak.max(y);
@@ -56,7 +56,7 @@ fn compute_velocity_bounds(target: &Target) -> (RangeInclusive<i64>, RangeInclus
     let x_lower_bound = 0;
     let x_upper_bound = target.x_range.1.pow(2).add(target.x_range.1).div(2);
     let y_lower_bound = target.y_range.0;
-    let y_upper_bound = ((target.y_range.0 * -1) - 1).abs();
+    let y_upper_bound = ((-target.y_range.0) - 1).abs();
     (x_lower_bound..=x_upper_bound, y_lower_bound..=y_upper_bound)
 }
 
